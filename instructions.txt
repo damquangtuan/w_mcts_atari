@@ -1,0 +1,10 @@
+First we must install conda 4.7.12
+
+Then
+
+conda create -n test_env python=3.7 anaconda
+conda activate test_env
+conda install pytorch
+pip install --user mushroom-rl
+pip install --user gym
+pip install --user gym[atari]
