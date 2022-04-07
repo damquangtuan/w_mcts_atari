@@ -182,18 +182,19 @@ class Action():
     ''' Action object '''
     def __init__(self, index, parent_state, Q_init=0.0, tau=1.0, epsilon=0, lambda_const=0, algorithm='uct', p=1.0,
                  step_size=0., std=0):
-        self.index = index
+        self.index = index #action index
         self.child_state = None
         self.parent_state = parent_state
         self.W = 0.0
-        self.n = 1
+        self.n = 1 #visitation count
         self.Q = Q_init  # in w-mcts, self.Q is the mean of Q vectors
+        self.Q_init = Q_init
         self.Q_std = std  # standard deviation
         self.tau = tau
-        self.epsilon = epsilon
+        self.epsilon = epsilon # exploration
         self.lambda_const = lambda_const
         self.algorithm = algorithm
-        self.p = p
+        self.p = p #power mean
         self._step_size = step_size
 
     def add_child_state(self, s1, r, terminal, model):
@@ -243,7 +244,7 @@ class State():
         # DNG
         self.alpha = 1
         self.beta = 100
-        self.mu = 0
+        self.mu = 0 # mean of the value distribution, assign this to self.V
         self.ll = 0.01
 
         self.evaluate()
@@ -321,7 +322,7 @@ class State():
             q_values = []
             for action in self.child_actions:
                 if action.child_state is None:
-                    q_values.append(action.Q)
+                    q_values.append(action.Q_init)
                     continue
 
                 alpha = action.child_state.alpha
