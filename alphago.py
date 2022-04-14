@@ -413,6 +413,7 @@ class State():
             self.priors = softmax(self.Q.detach().cpu().numpy() / self.tau)
             self.index = self.index.detach().cpu()
             if self.algorithm == 'dng':
+                self.mu = self.V
                 self.child_actions = [
                     Action(a, parent_state=self, Q_init=self.V, tau=self.tau, epsilon=self.epsilon,
                            lambda_const=self.lambda_const, algorithm=self.algorithm, p=self.p, std=0) for a in range(self.na)]
@@ -603,21 +604,21 @@ class MCTS():
             # or self.algorithm == 'w-mcts':
             pi_target = stable_normalizer(counts, temp)
         elif self.algorithm == 'dng':
-            q_values = [child_action.Q for child_action in self.root.child_actions]
-            # q_values = []
-            # for action in self.root.child_actions:
-            #     if action.child_state is None:
-            #         q_values.append(action.Q_init)
-            #         continue
-            #     alpha = action.child_state.alpha
-            #     beta = action.child_state.beta
-            #     mu = action.child_state.mu
-            #     ll = action.child_state.ll
-            #
-            #     tau = np.random.gamma(alpha, 1/beta)
-            #     x = np.random.normal(mu, np.sqrt(1/(ll*tau)))
-            #
-            #     q_values.append(action.Q + self.gamma * x)
+            # q_values = [child_action.Q for child_action in self.root.child_actions]
+            q_values = []
+            for action in self.root.child_actions:
+                if action.child_state is None:
+                    q_values.append(action.Q_init)
+                    continue
+                alpha = action.child_state.alpha
+                beta = action.child_state.beta
+                mu = action.child_state.mu
+                ll = action.child_state.ll
+
+                tau = np.random.gamma(alpha, 1/beta)
+                x = np.random.normal(mu, np.sqrt(1/(ll*tau)))
+
+                q_values.append(action.Q + self.gamma * x)
 
             pi_target = q_values/sum(q_values)
 
