@@ -412,9 +412,14 @@ class State():
             self.V_std = np.std(self.Q.detach().cpu().numpy())
             self.priors = softmax(self.Q.detach().cpu().numpy() / self.tau)
             self.index = self.index.detach().cpu()
-            self.child_actions = [
-                Action(a, parent_state=self, Q_init=Q_value[a], tau=self.tau, epsilon=self.epsilon,
-                       lambda_const=self.lambda_const, algorithm=self.algorithm, p=self.p, std=0) for a in range(self.na)]
+            if self.algorithm == 'dng':
+                self.child_actions = [
+                    Action(a, parent_state=self, Q_init=self.V, tau=self.tau, epsilon=self.epsilon,
+                           lambda_const=self.lambda_const, algorithm=self.algorithm, p=self.p, std=0) for a in range(self.na)]
+            else:
+                self.child_actions = [
+                    Action(a, parent_state=self, Q_init=Q_value[a], tau=self.tau, epsilon=self.epsilon,
+                           lambda_const=self.lambda_const, algorithm=self.algorithm, p=self.p, std=0) for a in range(self.na)]
 
     def update(self, R, update_type='mean'):
         ''' update count on backward pass '''
@@ -598,7 +603,23 @@ class MCTS():
             # or self.algorithm == 'w-mcts':
             pi_target = stable_normalizer(counts, temp)
         elif self.algorithm == 'dng':
-            pi_target = [child_action.Q for child_action in self.root.child_actions]
+            q_values = [child_action.Q for child_action in self.root.child_actions]
+            # q_values = []
+            # for action in self.root.child_actions:
+            #     if action.child_state is None:
+            #         q_values.append(action.Q_init)
+            #         continue
+            #     alpha = action.child_state.alpha
+            #     beta = action.child_state.beta
+            #     mu = action.child_state.mu
+            #     ll = action.child_state.ll
+            #
+            #     tau = np.random.gamma(alpha, 1/beta)
+            #     x = np.random.normal(mu, np.sqrt(1/(ll*tau)))
+            #
+            #     q_values.append(action.Q + self.gamma * x)
+
+            pi_target = q_values/sum(q_values)
 
         return self.root.index, pi_target, V_target
 
@@ -654,6 +675,8 @@ def agent(algorithm, game, n_ep, n_mcts, max_ep_len, c, p, gamma, temp, tau, eps
             if algorithm == 'uct' or algorithm == 'power-uct' or algorithm == 'maxmcts' or algorithm == 'w-mcts':
                 chosen_action = np.random.choice(np.size(pi), 1, p=pi)
                 a = int(chosen_action[0])
+            elif algorithm == 'dng':
+                a = np.random.choice(np.argwhere(pi == np.max(pi)).ravel())
             else:
                 a = np.argmax(pi)
 
